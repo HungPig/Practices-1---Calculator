@@ -70,7 +70,7 @@ public class About extends javax.swing.JDialog {
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel2.setText("<html><font color=\"#0000CF\"><u>https://github.com/javadev/calculator</u></font></html>");
+        jLabel2.setText("<html><font color=\"#FFFFFF\"><u>https://github.com/HungPig/Practices-1---Calculator.git</u></font></html>");
         jLabel2.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jLabel2.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -85,9 +85,9 @@ public class About extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 314, Short.MAX_VALUE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButton1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 314, Short.MAX_VALUE))
+                    .addComponent(jLabel2))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -111,7 +111,7 @@ public class About extends javax.swing.JDialog {
 
     private void jLabel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MouseClicked
         try {
-            java.awt.Desktop.getDesktop().browse(new java.net.URI("https://github.com/javadev/calc"));
+            java.awt.Desktop.getDesktop().browse(new java.net.URI("https://github.com/HungPig/Practices-1---Calculator.git"));
         } catch (URISyntaxException ex) {
             Logger.getLogger(About.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {

@@ -27,9 +27,9 @@
           <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jLabel1" pref="314" max="32767" attributes="0"/>
+                  <Component id="jLabel1" max="32767" attributes="0"/>
                   <Component id="jButton1" alignment="1" min="-2" pref="65" max="-2" attributes="0"/>
-                  <Component id="jLabel2" alignment="0" pref="314" max="32767" attributes="0"/>
+                  <Component id="jLabel2" alignment="0" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -76,7 +76,7 @@
           <Font name="Tahoma" size="16" style="0"/>
         </Property>
         <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="text" type="java.lang.String" value="&lt;html&gt;&lt;font color=&quot;#0000CF&quot;&gt;&lt;u&gt;https://github.com/javadev/calculator&lt;/u&gt;&lt;/font&gt;&lt;/html&gt;"/>
+        <Property name="text" type="java.lang.String" value="&lt;html&gt;&lt;font color=&quot;#FFFFFF&quot;&gt;&lt;u&gt;https://github.com/HungPig/Practices-1---Calculator.git&lt;/u&gt;&lt;/font&gt;&lt;/html&gt;"/>
         <Property name="cursor" type="java.awt.Cursor" editor="org.netbeans.modules.form.editors2.CursorEditor">
           <Color id="Hand Cursor"/>
         </Property>
