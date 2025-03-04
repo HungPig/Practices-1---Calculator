@@ -6,6 +6,8 @@ package thuchanh1;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import java.math.BigDecimal;
+import java.sql.*;
+
 /**
  *
  * @author Admin
@@ -14,6 +16,7 @@ public class Calculator extends javax.swing.JFrame {
 
     private BigDecimal currentValue = BigDecimal.ZERO;
     private BigDecimal savedValue = BigDecimal.ZERO;
+    private Connection connection;
     private boolean initValue = true;
     private boolean doInitValue = true;
     private char commandCode = '=';
@@ -46,6 +49,17 @@ public class Calculator extends javax.swing.JFrame {
         final int y = (screenSize.height - getHeight()) / 2;
         setLocation(x, y);
         initCalc();
+        connectToDatabase();
+    }
+
+    private void connectToDatabase() {
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:calculator.db");
+            Statement statement = connection.createStatement();
+            statement.execute("CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, expression TEXT, result TEXT)");
+        } catch (SQLException e) {
+//            
+        }
     }
 
     private void setText(String text) {
@@ -92,413 +106,465 @@ public class Calculator extends javax.swing.JFrame {
     }
 
     private void fCalc(String command) {
-        if (null != command) switch (command) {
-            case "ce" -> initCalc();
-            case "=" -> {
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = calcResult(value);
-                    commandCode = '=';
-                    this.topText = "";
-                    setText(result.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                            .replaceFirst("0+$", "").replaceFirst(",$", ""));
-                    savedValue = result;
-                    currentValue = BigDecimal.ZERO;
+        if (null != command) {
+            switch (command) {
+                case "ce" ->
+                    initCalc();
+                case "=" -> {
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = calcResult(value);
+                        commandCode = '=';
+                        this.topText = "";
+                        setText(result.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                                .replaceFirst("0+$", "").replaceFirst(",$", ""));
+                        savedValue = result;
+                        currentValue = BigDecimal.ZERO;
+                    }
                 }
-            }
-            case "+-" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                currentValue = currentValue.multiply(new BigDecimal("-1"));
-                setText(currentValue.toString().replace('.', ','));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = false;
-            }
-            case "sqrt" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    currentValue = BigDecimalUtil.sqrt(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "sqr" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = currentValue.pow(2);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "ln" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    if (currentValue.compareTo(BigDecimal.ZERO) < 0
-                            || currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.ln(currentValue, 32);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "log" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    if (currentValue.compareTo(BigDecimal.ZERO) < 0
-                            || currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.log10(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "sin" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                switch (buttonGroup1.getSelection().getMnemonic()) {
-                    case 'D' -> currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_180);
-                    case 'G' -> currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_200);
-                    default -> {
-                    }
-                }   try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.sine(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "cos" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                switch (buttonGroup1.getSelection().getMnemonic()) {
-                    case 'D' -> currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_180);
-                    case 'G' -> currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_200);
-                    default -> {
-                    }
-                }   try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.cosine(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "tan" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                switch (buttonGroup1.getSelection().getMnemonic()) {
-                    case 'D' -> currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_180);
-                    case 'G' -> currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_200);
-                    default -> {
-                    }
-                }   try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.tangent(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "cube" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = currentValue.pow(3);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "cuberoot" -> {
-                currentValue = savedValue == BigDecimal.ZERO
-                        ? new BigDecimal(getText().replace(',', '.')) : savedValue;
-                try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.cuberoot(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "pow" -> {
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = BigDecimalUtil.pow(savedValue, value);
-                    setText(result.toString().replace('.', ','));
-                    savedValue = result;
-                    currentValue = BigDecimal.ZERO;
-                }   commandCode = '^';
-                setText(getText() + " " + commandCode);
-            }
-            case "yroot" -> {
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = BigDecimalUtil.pow(savedValue, BigDecimal.ONE.divide(value, 32, BigDecimal.ROUND_HALF_UP));
-                    setText(result.toString().replace('.', ','));
-                    savedValue = result;
-                    currentValue = BigDecimal.ZERO;
-                }   commandCode = 'r';
-                setTopText(getText() + " " + commandCode);
-            }
-            case "arcsin" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.asin(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   switch (buttonGroup1.getSelection().getMnemonic()) {
-                    case 'D' -> currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_180, 32, BigDecimal.ROUND_HALF_UP);
-                    case 'G' -> currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_200, 32, BigDecimal.ROUND_HALF_UP);
-                    default -> {
-                    }
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "arccos" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.acos(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   switch (buttonGroup1.getSelection().getMnemonic()) {
-                    case 'D' -> currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_180, 32, BigDecimal.ROUND_HALF_UP);
-                    case 'G' -> currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_200, 32, BigDecimal.ROUND_HALF_UP);
-                    default -> {
-                    }
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "arctan" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                try {
-                    if (currentValue.toBigInteger().toString().length() > 256) {
-                        initCalc();
-                        setText("Error.");
-                        return;
-                    }
-                    currentValue = BigDecimalUtil.atan(currentValue);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   switch (buttonGroup1.getSelection().getMnemonic()) {
-                    case 'D':
-                        currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_180, 32, BigDecimal.ROUND_HALF_UP);
-                        break;
-                    case 'G':
-                        currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_200, 32, BigDecimal.ROUND_HALF_UP);
-                        break;
-                    default:
-                        break;
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "nbs" -> {
-                if (!initValue && getText().matches("[\\d,]+")) {
-                    if (getText().length() == 1) {
-                        setText("0");
-                        initValue = true;
-                    } else {
-                        setText(getText().substring(0, getText().length() - 1));
-                    }
+                case "+-" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    currentValue = currentValue.multiply(new BigDecimal("-1"));
+                    setText(currentValue.toString().replace('.', ','));
                     if (commandCode == '=') {
-                        savedValue = new BigDecimal(getText().replace(',', '.'));
-                    } else {
-                        currentValue = new BigDecimal(getText().replace(',', '.'));
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
                     }
-                    return;
-                }
-            }
-            case "+" -> {
-                String saveText = getText();
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = calcResult(value);
-                    setText(result.toString().replace('.', ','));
-                    savedValue = result;
-                    currentValue = BigDecimal.ZERO;
-                }       commandCode = '+';
-                setTopText(saveText + " " + commandCode);
-                }
-            case "-" -> {
-                String saveText = getText();
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = calcResult(value);
-                    setText(result.toString().replace('.', ','));
-                    savedValue = result;
-                    currentValue = BigDecimal.ZERO;
-                }       commandCode = '-';
-                setTopText(saveText + " " + commandCode);
-                }
-            case "*" -> {
-                String saveText = getText();
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = calcResult(value);
-                    setText(result.toString().replace('.', ','));
-                    savedValue = result;
-                    currentValue = BigDecimal.ZERO;
-                }       commandCode = '*';
-                setTopText(saveText + " " + commandCode);
-                }
-            case "/" -> {
-                String saveText = getText();
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = calcResult(value);
-                    setText(result.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                    savedValue = result;
-                    currentValue = BigDecimal.ZERO;
-                }       commandCode = '/';
-                setTopText(saveText + " " + commandCode);
-                }
-            case "1/x" -> {
-                currentValue = savedValue == BigDecimal.ZERO
-                        ? new BigDecimal(getText().replace(',', '.')) : savedValue;
-                try {
-                    currentValue = BigDecimal.ONE.divide(currentValue, 32, BigDecimal.ROUND_HALF_UP);
-                } catch (ArithmeticException ex) {
-                    ex.getMessage();
-                }   setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                        .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                if (commandCode == '=') {
-                    savedValue = currentValue;
-                    currentValue = BigDecimal.ZERO;
-                }   doInitValue = true;
-            }
-            case "%" -> {
-                if (commandCode != '=' && !initValue) {
-                    BigDecimal value = new BigDecimal(getText().replace(',', '.'));
-                    BigDecimal result = savedValue.multiply(value).divide(BigDecimal.valueOf(100), 32, BigDecimal.ROUND_HALF_UP);
-                    setText(result.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
-                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
-                    currentValue = result;
-                    return;
-                }
-            }
-            case "MC" -> {
-                memoryValue = BigDecimal.ZERO;
-                doInitValue = true;
-            }
-            case "MR" -> {
-                setText(memoryValue.toPlainString().replace('.', ','));
-                if (commandCode == '=') {
-                    savedValue = memoryValue;
-                    currentValue = BigDecimal.ZERO;
-                    doInitValue = true;
-                } else {
-                    currentValue = memoryValue;
                     doInitValue = false;
-                    initValue = false;
                 }
-            }
-            case "MS" -> {
-                memoryValue = new BigDecimal(getText().replace(',', '.'));
-                doInitValue = true;
-            }
-            case "M+" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                memoryValue = memoryValue.add(currentValue);
-                doInitValue = true;
-            }
-            case "M-" -> {
-                currentValue = new BigDecimal(getText().replace(',', '.'));
-                memoryValue = memoryValue.subtract(currentValue);
-                doInitValue = true;
-            }
-            default -> {
+                case "sqrt" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        currentValue = BigDecimalUtil.sqrt(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "sqr" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = currentValue.pow(2);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "ln" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        if (currentValue.compareTo(BigDecimal.ZERO) < 0
+                                || currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.ln(currentValue, 32);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "log" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        if (currentValue.compareTo(BigDecimal.ZERO) < 0
+                                || currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.log10(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "sin" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    switch (buttonGroup1.getSelection().getMnemonic()) {
+                        case 'D' ->
+                            currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_180);
+                        case 'G' ->
+                            currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_200);
+                        default -> {
+                        }
+                    }
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.sine(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "cos" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    switch (buttonGroup1.getSelection().getMnemonic()) {
+                        case 'D' ->
+                            currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_180);
+                        case 'G' ->
+                            currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_200);
+                        default -> {
+                        }
+                    }
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.cosine(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "tan" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    switch (buttonGroup1.getSelection().getMnemonic()) {
+                        case 'D' ->
+                            currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_180);
+                        case 'G' ->
+                            currentValue = currentValue.multiply(BigDecimalUtil.PI_DIV_200);
+                        default -> {
+                        }
+                    }
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.tangent(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "cube" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = currentValue.pow(3);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "cuberoot" -> {
+                    currentValue = savedValue == BigDecimal.ZERO
+                            ? new BigDecimal(getText().replace(',', '.')) : savedValue;
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.cuberoot(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "pow" -> {
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = BigDecimalUtil.pow(savedValue, value);
+                        setText(result.toString().replace('.', ','));
+                        savedValue = result;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    commandCode = '^';
+                    setText(getText() + " " + commandCode);
+                }
+                case "yroot" -> {
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = BigDecimalUtil.pow(savedValue, BigDecimal.ONE.divide(value, 32, BigDecimal.ROUND_HALF_UP));
+                        setText(result.toString().replace('.', ','));
+                        savedValue = result;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    commandCode = 'r';
+                    setTopText(getText() + " " + commandCode);
+                }
+                case "arcsin" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.asin(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    switch (buttonGroup1.getSelection().getMnemonic()) {
+                        case 'D' ->
+                            currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_180, 32, BigDecimal.ROUND_HALF_UP);
+                        case 'G' ->
+                            currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_200, 32, BigDecimal.ROUND_HALF_UP);
+                        default -> {
+                        }
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "arccos" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.acos(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    switch (buttonGroup1.getSelection().getMnemonic()) {
+                        case 'D' ->
+                            currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_180, 32, BigDecimal.ROUND_HALF_UP);
+                        case 'G' ->
+                            currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_200, 32, BigDecimal.ROUND_HALF_UP);
+                        default -> {
+                        }
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "arctan" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    try {
+                        if (currentValue.toBigInteger().toString().length() > 256) {
+                            initCalc();
+                            setText("Error.");
+                            return;
+                        }
+                        currentValue = BigDecimalUtil.atan(currentValue);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    switch (buttonGroup1.getSelection().getMnemonic()) {
+                        case 'D':
+                            currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_180, 32, BigDecimal.ROUND_HALF_UP);
+                            break;
+                        case 'G':
+                            currentValue = currentValue.divide(BigDecimalUtil.PI_DIV_200, 32, BigDecimal.ROUND_HALF_UP);
+                            break;
+                        default:
+                            break;
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "nbs" -> {
+                    if (!initValue && getText().matches("[\\d,]+")) {
+                        if (getText().length() == 1) {
+                            setText("0");
+                            initValue = true;
+                        } else {
+                            setText(getText().substring(0, getText().length() - 1));
+                        }
+                        if (commandCode == '=') {
+                            savedValue = new BigDecimal(getText().replace(',', '.'));
+                        } else {
+                            currentValue = new BigDecimal(getText().replace(',', '.'));
+                        }
+                        return;
+                    }
+                }
+                case "+" -> {
+                    String saveText = getText();
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = calcResult(value);
+                        setText(result.toString().replace('.', ','));
+                        savedValue = result;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    commandCode = '+';
+                    setTopText(saveText + " " + commandCode);
+                }
+                case "-" -> {
+                    String saveText = getText();
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = calcResult(value);
+                        setText(result.toString().replace('.', ','));
+                        savedValue = result;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    commandCode = '-';
+                    setTopText(saveText + " " + commandCode);
+                }
+                case "*" -> {
+                    String saveText = getText();
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = calcResult(value);
+                        setText(result.toString().replace('.', ','));
+                        savedValue = result;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    commandCode = '*';
+                    setTopText(saveText + " " + commandCode);
+                }
+                case "/" -> {
+                    String saveText = getText();
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = calcResult(value);
+                        setText(result.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                                .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                        savedValue = result;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    commandCode = '/';
+                    setTopText(saveText + " " + commandCode);
+                }
+                case "1/x" -> {
+                    currentValue = savedValue == BigDecimal.ZERO
+                            ? new BigDecimal(getText().replace(',', '.')) : savedValue;
+                    try {
+                        currentValue = BigDecimal.ONE.divide(currentValue, 32, BigDecimal.ROUND_HALF_UP);
+                    } catch (ArithmeticException ex) {
+                        ex.getMessage();
+                    }
+                    setText(currentValue.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                            .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                    if (commandCode == '=') {
+                        savedValue = currentValue;
+                        currentValue = BigDecimal.ZERO;
+                    }
+                    doInitValue = true;
+                }
+                case "%" -> {
+                    if (commandCode != '=' && !initValue) {
+                        BigDecimal value = new BigDecimal(getText().replace(',', '.'));
+                        BigDecimal result = savedValue.multiply(value).divide(BigDecimal.valueOf(100), 32, BigDecimal.ROUND_HALF_UP);
+                        setText(result.setScale(16, BigDecimal.ROUND_HALF_UP).toPlainString().replace('.', ',')
+                                .replaceFirst("(.+?)0+$", "$1").replaceFirst(",$", ""));
+                        currentValue = result;
+                        return;
+                    }
+                }
+                case "MC" -> {
+                    memoryValue = BigDecimal.ZERO;
+                    doInitValue = true;
+                }
+                case "MR" -> {
+                    setText(memoryValue.toPlainString().replace('.', ','));
+                    if (commandCode == '=') {
+                        savedValue = memoryValue;
+                        currentValue = BigDecimal.ZERO;
+                        doInitValue = true;
+                    } else {
+                        currentValue = memoryValue;
+                        doInitValue = false;
+                        initValue = false;
+                    }
+                }
+                case "MS" -> {
+                    memoryValue = new BigDecimal(getText().replace(',', '.'));
+                    doInitValue = true;
+                }
+                case "M+" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    memoryValue = memoryValue.add(currentValue);
+                    doInitValue = true;
+                }
+                case "M-" -> {
+                    currentValue = new BigDecimal(getText().replace(',', '.'));
+                    memoryValue = memoryValue.subtract(currentValue);
+                    doInitValue = true;
+                }
+                default -> {
+                }
             }
         }
         if (doInitValue) {
@@ -523,9 +589,12 @@ public class Calculator extends javax.swing.JFrame {
     private BigDecimal calcResult(BigDecimal value) {
         BigDecimal result = BigDecimal.ZERO;
         switch (commandCode) {
-            case '+' -> result = savedValue.add(value);
-            case '-' -> result = savedValue.subtract(value);
-            case '*' -> result = savedValue.multiply(value);
+            case '+' ->
+                result = savedValue.add(value);
+            case '-' ->
+                result = savedValue.subtract(value);
+            case '*' ->
+                result = savedValue.multiply(value);
             case '/' -> {
                 try {
                     result = savedValue.divide(value, 32, BigDecimal.ROUND_HALF_UP);
@@ -637,6 +706,7 @@ public class Calculator extends javax.swing.JFrame {
         jMenuItem3 = new javax.swing.JMenuItem();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem4 = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Calculator");
@@ -1384,6 +1454,14 @@ public class Calculator extends javax.swing.JFrame {
 
         jMenuBar2.add(jMenu1);
 
+        jMenu2.setText("History");
+        jMenu2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenu2ActionPerformed(evt);
+            }
+        });
+        jMenuBar2.add(jMenu2);
+
         setJMenuBar(jMenuBar2);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -1555,14 +1633,18 @@ public class Calculator extends javax.swing.JFrame {
 
     private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
         switch (evt.getKeyChar()) {
-            case '+', '-', '*', '/', '=', '%' -> fCalc("" + evt.getKeyChar());
-            case '\b' -> fCalc("nbs");
-            case '\n' -> fCalc("=");
+            case '+', '-', '*', '/', '=', '%' ->
+                fCalc("" + evt.getKeyChar());
+            case '\b' ->
+                fCalc("nbs");
+            case '\n' ->
+                fCalc("=");
             default -> {
                 java.awt.event.ActionEvent actionEvent = new java.awt.event.ActionEvent(this, 0, "" + evt.getKeyChar());
                 if (evt.getKeyChar() == '.') {
                     actionEvent = new java.awt.event.ActionEvent(this, 0, ",");
-                }   keyDetect(actionEvent);
+                }
+                keyDetect(actionEvent);
             }
         }
     }//GEN-LAST:event_jTextField1KeyTyped
@@ -1762,6 +1844,20 @@ public class Calculator extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_formKeyTyped
 
+    private void jMenu2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenu2ActionPerformed
+       
+    }//GEN-LAST:event_jMenu2ActionPerformed
+    private void saveHistory(String expression, String result) {
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO history (expression, result) VALUES (?, ?)");
+            preparedStatement.setString(1, expression);
+            preparedStatement.setString(2, result);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * @param args the command line arguments
      */
@@ -1830,6 +1926,7 @@ public class Calculator extends javax.swing.JFrame {
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
     private javax.swing.JMenuBar jMenuBar2;
