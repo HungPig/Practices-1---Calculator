@@ -70,7 +70,7 @@ public class About extends javax.swing.JDialog {
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel2.setText("<html><font color=\"#FFFFFF\"><u>https://github.com/HungPig/Practices-1---Calculator.git</u></font></html>");
+        jLabel2.setText("<html><font color=\"#FFFFFF\"><u>https:///github.com/HungPig/Practices-1---Calculator.git</u></font></html>");
         jLabel2.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jLabel2.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
